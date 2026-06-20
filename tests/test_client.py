@@ -131,7 +131,7 @@ class TestTossInvestClient(unittest.TestCase):
     @patch.object(TossInvestClient, "_request")
     def test_market_data_endpoints(self, mock_request):
         # 1. get_prices
-        self.client.get_prices(["005930", "AAPL"])
+        self.client.market.get_prices(["005930", "AAPL"])
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/prices",
@@ -139,7 +139,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # 2. get_orderbook
-        self.client.get_orderbook("005930")
+        self.client.market.get_orderbook("005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/orderbook",
@@ -147,7 +147,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # 3. get_candles
-        self.client.get_candles("005930", "1d", count=50, adjusted=False)
+        self.client.market.get_candles("005930", "1d", count=50, adjusted=False)
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/candles",
@@ -155,7 +155,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # 4. get_price_limits
-        self.client.get_price_limits("005930")
+        self.client.market.get_price_limits("005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/price-limits",
@@ -163,7 +163,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # 5. get_trades
-        self.client.get_trades("005930", count=20)
+        self.client.market.get_trades("005930", count=20)
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/trades",
@@ -173,7 +173,7 @@ class TestTossInvestClient(unittest.TestCase):
     @patch.object(TossInvestClient, "_request")
     def test_stock_info_endpoints(self, mock_request):
         # get_stocks
-        self.client.get_stocks(["005930"])
+        self.client.market.get_stocks(["005930"])
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/stocks",
@@ -181,14 +181,14 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_stock_warnings
-        self.client.get_stock_warnings("005930")
+        self.client.market.get_stock_warnings("005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/stocks/005930/warnings",
         )
 
         # get_exchange_rate
-        self.client.get_exchange_rate(base_currency="USD", quote_currency="KRW")
+        self.client.market.get_exchange_rate(base_currency="USD", quote_currency="KRW")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/exchange-rate",
@@ -196,7 +196,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_market_calendar
-        self.client.get_market_calendar(country="KR", date="2026-06-20")
+        self.client.market.get_market_calendar(country="KR", date="2026-06-20")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/market-calendar/KR",
@@ -206,7 +206,7 @@ class TestTossInvestClient(unittest.TestCase):
     @patch.object(TossInvestClient, "_request")
     def test_account_and_asset_endpoints(self, mock_request):
         # get_accounts (requires auth, but not account header)
-        self.client.get_accounts()
+        self.client.account.get_accounts()
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/accounts",
@@ -215,7 +215,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_holdings (requires auth, and account header)
-        self.client.get_holdings(symbol="005930")
+        self.client.account.get_holdings(symbol="005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/holdings",
@@ -227,8 +227,8 @@ class TestTossInvestClient(unittest.TestCase):
 
     @patch.object(TossInvestClient, "_request")
     def test_order_endpoints(self, mock_request):
-        # create_order
-        self.client.create_order(
+        # create
+        self.client.order.create(
             symbol="005930",
             side="BUY",
             order_type="LIMIT",
@@ -254,8 +254,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # modify_order
-        self.client.modify_order(
+        # modify
+        self.client.order.modify(
             order_id="ord-abc",
             order_type="LIMIT",
             price="71000",
@@ -275,8 +275,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # cancel_order
-        self.client.cancel_order(order_id="ord-abc")
+        # cancel
+        self.client.order.cancel(order_id="ord-abc")
         mock_request.assert_called_with(
             method="POST",
             path="/api/v1/orders/ord-abc/cancel",
@@ -286,8 +286,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # get_orders
-        self.client.get_orders(status="OPEN", symbol="005930")
+        # list
+        self.client.order.list(status="OPEN", symbol="005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/orders",
@@ -297,8 +297,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # get_order
-        self.client.get_order(order_id="ord-abc")
+        # get
+        self.client.order.get(order_id="ord-abc")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/orders/ord-abc",
@@ -308,7 +308,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_buying_power
-        self.client.get_buying_power(currency="KRW")
+        self.client.order.get_buying_power(currency="KRW")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/buying-power",
@@ -319,7 +319,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_sellable_quantity
-        self.client.get_sellable_quantity(symbol="005930")
+        self.client.order.get_sellable_quantity(symbol="005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/sellable-quantity",
@@ -330,7 +330,7 @@ class TestTossInvestClient(unittest.TestCase):
         )
 
         # get_commissions
-        self.client.get_commissions()
+        self.client.order.get_commissions()
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/commissions",

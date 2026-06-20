@@ -19,7 +19,7 @@ def run_demo():
     
     print("=== 1. Initializing TossInvestClient ===")
     # Optionally specify a default account_seq (e.g. 1) if known,
-    # or pass it to individual account/order methods.
+    # or pass it to individual service methods.
     client = TossInvestClient(
         client_id=client_id,
         client_secret=client_secret,
@@ -28,32 +28,32 @@ def run_demo():
     print("Client initialized successfully.")
 
     try:
-        # 2. Get current stock prices
+        # 2. Get current stock prices via MarketService
         print("\n=== 2. Fetching Stock Prices ===")
         symbols = ["005930", "AAPL"]  # Samsung Electronics (KRX), Apple (NASDAQ)
-        prices = client.get_prices(symbols)
+        prices = client.market.get_prices(symbols)
         print(f"Prices for {symbols}:")
         for p in prices:
             print(f"  - Symbol: {p.get('symbol')}, Current Price: {p.get('lastPrice')} {p.get('currency')}")
 
-        # 3. Get candles
+        # 3. Get candles via MarketService
         print("\n=== 3. Fetching Candles (1-day interval) ===")
-        candles_res = client.get_candles(symbol="005930", interval="1d", count=5)
+        candles_res = client.market.get_candles(symbol="005930", interval="1d", count=5)
         candles = candles_res.get("candles", [])
         print(f"Last 5 daily candles for Samsung Electronics:")
         for c in candles:
             print(f"  - Time: {c.get('timestamp')}, Close: {c.get('closePrice')}, Volume: {c.get('volume')}")
 
-        # 4. Get registered accounts
+        # 4. Get registered accounts via AccountService
         print("\n=== 4. Fetching Registered Accounts ===")
-        accounts = client.get_accounts()
+        accounts = client.account.get_accounts()
         print("Registered Accounts:")
         for acc in accounts:
             print(f"  - Seq: {acc.get('accountSeq')}, Name: {acc.get('name')}, Type: {acc.get('type')}")
 
-        # 5. Fetch account holdings
+        # 5. Fetch account holdings via AccountService
         print("\n=== 5. Fetching Account Holdings ===")
-        holdings = client.get_holdings()  # Uses client-level default account_seq
+        holdings = client.account.get_holdings()  # Uses client-level default account_seq
         print("Holdings Summary:")
         total_value = holdings.get("marketValue", {}).get("total", {})
         print(f"  - Total Portfolio Value: KRW {total_value.get('krw')}, USD {total_value.get('usd')}")
@@ -61,16 +61,16 @@ def run_demo():
         for item in holdings.get("items", []):
             print(f"  - Stock: {item.get('name')} ({item.get('symbol')}), Quantity: {item.get('quantity')}, Average Cost: {item.get('averagePurchasePrice')}")
 
-        # 6. Buying Power (Available Cash)
+        # 6. Buying Power (Available Cash) via OrderService
         print("\n=== 6. Fetching Buying Power ===")
-        buying_power = client.get_buying_power(currency="KRW")
+        buying_power = client.order.get_buying_power(currency="KRW")
         print(f"Buying Power: KRW {buying_power.get('buyingPower')}")
 
-        # 7. Create, modify, and cancel an order (Simulated or conditional)
+        # 7. Create, modify, and cancel an order via OrderService
         print("\n=== 7. Order Management Flow ===")
         # Creating a quantity-based limit buy order for Samsung Electronics at 60,000 KRW
         print("Placing buy order for Samsung Electronics...")
-        order = client.create_order(
+        order = client.order.create(
             symbol="005930",
             side="BUY",
             order_type="LIMIT",
@@ -83,7 +83,7 @@ def run_demo():
 
         # Modify order price to 59,500 KRW
         print(f"Modifying order {order_id}...")
-        mod_order = client.modify_order(
+        mod_order = client.order.modify(
             order_id=order_id,
             order_type="LIMIT",
             price="59500",
@@ -93,7 +93,7 @@ def run_demo():
 
         # Cancel the modified order
         print(f"Canceling order {mod_order.get('orderId')}...")
-        cancel_res = client.cancel_order(order_id=mod_order.get("orderId"))
+        cancel_res = client.order.cancel(order_id=mod_order.get("orderId"))
         print(f"Order canceled! ID returned: {cancel_res.get('orderId')}")
 
     except TossInvestRateLimitError as e:

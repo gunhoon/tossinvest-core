@@ -4,6 +4,10 @@ version = "0.0.0"
 authors = [
   { name="Gunhoon Lee", email="gunhoon@gmail.com" },
 ]
+requires-python = ">=3.9"
+dependencies = [
+  "requests>=2.28.0",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]

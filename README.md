@@ -192,3 +192,18 @@ client = TossInvestClient(
     auto_retry_rate_limit=False
 )
 ```
+
+---
+
+## 테스트 실행 (Testing)
+
+이 패키지는 `pytest`를 사용하여 테스트가 작성되었습니다. 다음과 같이 테스트를 실행할 수 있습니다.
+
+```bash
+# pytest 설치 (필요시)
+pip install pytest
+
+# 테스트 실행
+PYTHONPATH=src pytest
+```
+

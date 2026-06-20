@@ -8,6 +8,7 @@ from tossinvest import (
     TossInvestError,
     TossInvestRateLimitError,
 )
+from tossinvest.services.auth import AuthService
 
 
 class TestTossInvestClient(unittest.TestCase):
@@ -35,16 +36,16 @@ class TestTossInvestClient(unittest.TestCase):
         }
 
         with patch.object(self.client.session, "post", return_value=mock_response) as mock_post:
-            token = self.client._get_valid_token()
+            token = self.client.auth.get_token()
             self.assertEqual(token, "token-1")
-            self.assertEqual(self.client._token, "token-1")
-            self.assertEqual(self.client._token_expires_at, 4600.0)
+            self.assertEqual(self.client.auth._token, "token-1")
+            self.assertEqual(self.client.auth._token_expires_at, 4600.0)
             mock_post.assert_called_once()
 
         # Second call: Token is still valid (cached), post is not called
         mock_time.return_value = 2000.0  # Still before 4540 (4600 - 60 safety buffer)
         with patch.object(self.client.session, "post") as mock_post:
-            token = self.client._get_valid_token()
+            token = self.client.auth.get_token()
             self.assertEqual(token, "token-1")
             mock_post.assert_not_called()
 
@@ -59,7 +60,7 @@ class TestTossInvestClient(unittest.TestCase):
         }
 
         with patch.object(self.client.session, "post", return_value=mock_response_2) as mock_post:
-            token = self.client._get_valid_token()
+            token = self.client.auth.get_token()
             self.assertEqual(token, "token-2")
             mock_post.assert_called_once()
 
@@ -70,11 +71,11 @@ class TestTossInvestClient(unittest.TestCase):
 
         with patch.object(self.client.session, "post", return_value=mock_response):
             with self.assertRaises(TossInvestAuthError) as ctx:
-                self.client._refresh_token()
+                self.client.auth.issue_token()
             self.assertIn("Authentication failed", str(ctx.exception))
             self.assertEqual(ctx.exception.response_body, "Invalid credentials")
 
-    @patch.object(TossInvestClient, "_get_valid_token", return_value="mock-token")
+    @patch.object(AuthService, "get_token", return_value="mock-token")
     def test_request_success_unwraps_result(self, mock_token):
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -85,7 +86,7 @@ class TestTossInvestClient(unittest.TestCase):
             self.assertEqual(res, {"some_key": "some_value"})
             mock_req.assert_called_once()
 
-    @patch.object(TossInvestClient, "_get_valid_token", return_value="mock-token")
+    @patch.object(AuthService, "get_token", return_value="mock-token")
     def test_api_error_raised(self, mock_token):
         mock_response = MagicMock()
         mock_response.status_code = 400
@@ -109,7 +110,7 @@ class TestTossInvestClient(unittest.TestCase):
             self.assertEqual(err.message, "Bad request body")
             self.assertEqual(err.data, {"field": "quantity"})
 
-    @patch.object(TossInvestClient, "_get_valid_token", return_value="mock-token")
+    @patch.object(AuthService, "get_token", return_value="mock-token")
     def test_rate_limit_error_raised(self, mock_token):
         mock_response = MagicMock()
         mock_response.status_code = 429

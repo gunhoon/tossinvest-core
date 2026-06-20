@@ -1,15 +1,14 @@
-import time
 from typing import Any, Dict, Optional
 
 import requests
 
 from tossinvest.exceptions import (
     TossInvestAPIError,
-    TossInvestAuthError,
     TossInvestError,
     TossInvestRateLimitError,
 )
 from tossinvest.services.account import AccountService
+from tossinvest.services.auth import AuthService
 from tossinvest.services.market import MarketService
 from tossinvest.services.order import OrderService
 
@@ -40,56 +39,11 @@ class TossInvestClient:
         self.account_seq = account_seq
         self.session = session or requests.Session()
 
-        self._token: Optional[str] = None
-        self._token_expires_at: float = 0.0
-
-        # Initialize modular services
+        # Initialize modular services (auth initialized first so others can reference it if needed)
+        self.auth = AuthService(self)
         self.market = MarketService(self)
         self.account = AccountService(self)
         self.order = OrderService(self)
-
-    def _get_valid_token(self) -> str:
-        """Retrieve a cached access token or request a new one if expired."""
-        now = time.time()
-        # Add a 60-second safety buffer before token expiration
-        if self._token and now < self._token_expires_at - 60:
-            return self._token
-
-        self._refresh_token()
-        assert self._token is not None
-        return self._token
-
-    def _refresh_token(self) -> None:
-        """Call the OAuth2 token endpoint to obtain a new access token."""
-        url = f"{self.base_url}/oauth2/token"
-        headers = {
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-        data = {
-            "grant_type": "client_credentials",
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-        }
-
-        try:
-            response = self.session.post(url, headers=headers, data=data, timeout=15)
-            status_code = response.status_code
-            body_text = response.text
-
-            if status_code != 200:
-                raise TossInvestAuthError(
-                    f"Authentication failed with status code {status_code}: {body_text}",
-                    response_body=body_text,
-                )
-
-            res_json = response.json()
-            self._token = res_json["access_token"]
-            expires_in = res_json["expires_in"]
-            self._token_expires_at = time.time() + expires_in
-        except TossInvestAuthError:
-            raise
-        except Exception as e:
-            raise TossInvestAuthError(f"Failed to request OAuth2 token: {e}") from e
 
     def _request(
         self,
@@ -107,7 +61,7 @@ class TossInvestClient:
         req_headers = headers.copy() if headers else {}
 
         if requires_auth:
-            token = self._get_valid_token()
+            token = self.auth.get_token()
             req_headers["Authorization"] = f"Bearer {token}"
 
         if requires_account:
@@ -193,17 +147,3 @@ class TossInvestClient:
             data=data,
             status_code=status_code,
         )
-
-    def issue_token(self) -> Dict[str, Any]:
-        """Manually trigger OAuth2 token issuance.
-
-        Returns:
-            Dict containing access_token, token_type, expires_in.
-        """
-        # This will internally invoke _refresh_token and cache the results
-        self._refresh_token()
-        return {
-            "access_token": self._token,
-            "token_type": "Bearer",
-            "expires_in": int(max(0, self._token_expires_at - time.time())),
-        }

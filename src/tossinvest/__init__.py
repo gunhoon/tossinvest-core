@@ -5,7 +5,12 @@ from tossinvest.exceptions import (
     TossInvestError,
     TossInvestRateLimitError,
 )
-from tossinvest.services import AccountService, MarketService, OrderService
+from tossinvest.services import (
+    AccountService,
+    AuthService,
+    MarketService,
+    OrderService,
+)
 
 __all__ = [
     "TossInvestClient",
@@ -13,6 +18,7 @@ __all__ = [
     "TossInvestAuthError",
     "TossInvestAPIError",
     "TossInvestRateLimitError",
+    "AuthService",
     "MarketService",
     "AccountService",
     "OrderService",

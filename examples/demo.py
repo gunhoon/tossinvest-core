@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../s
 
 from tossinvest import (
     TossInvestAPIError,
+    TossInvestAuthError,
     TossInvestClient,
     TossInvestError,
     TossInvestRateLimitError,
@@ -29,7 +30,7 @@ def run_demo():
 
     try:
         # 1.5 Manually fetch token if needed (optional, as client handles this automatically)
-        # token_info = client.auth.issue_token()
+        # token_info = client.issue_token()
         # print(f"Manual token fetch: {token_info['access_token'][:10]}...")
 
         # 2. Get current stock prices via MarketService
@@ -100,6 +101,10 @@ def run_demo():
         cancel_res = client.order.cancel(order_id=mod_order.get("orderId"))
         print(f"Order canceled! ID returned: {cancel_res.get('orderId')}")
 
+    except TossInvestAuthError as e:
+        print(f"\n[AuthError] Authentication failed.")
+        print(f"Message: {e}")
+        print(f"Raw Response: {e.response_body}")
     except TossInvestRateLimitError as e:
         print(f"\n[RateLimitError] Exceeded API rate limits.")
         print(f"Code: {e.code}, Message: {e.message}")

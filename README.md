@@ -6,7 +6,7 @@
 
 ## 주요 특징
 
-- **서비스 분리 설계 (Service composition)**: 토스증권 Open API 명세에 따라 인증, 시세, 계좌, 주문 기능을 독립된 서비스 레이어(`auth`, `market`, `account`, `order`)로 격리하여 코드의 가독성 및 유지보수성을 극대화하였습니다.
+- **서비스 분리 설계 (Service composition)**: 토스증권 Open API 명세에 따라 시세, 계좌, 주문 기능을 독립된 서비스 레이어(`market`, `account`, `order`)로 격리하여 코드의 가독성 및 유지보수성을 극대화하였습니다. (인증 및 토큰 수명주기는 메인 클라이언트인 `TossInvestClient`에서 직접 관리합니다.)
 - **자동 토큰 갱신**: OAuth2 Access Token의 만료 시간(Expires in)을 감지하고 만료 60초 전에 자동으로 토큰을 발급/갱신하므로 개발자가 수동으로 인증 상태를 관리할 필요가 없습니다.
 - **계좌 컨텍스트 관리**: 클라이언트 수준에서 기본 `account_seq`(`X-Tossinvest-Account` 헤더)를 지정할 수 있고, 개별 API 호출 시점에 특정 계좌로 덮어쓰거나 변경하여 다중 계좌 환경을 유연하게 대처할 수 있습니다.
 - **타입 힌트 및 자동완성**: Python `TypedDict` 및 `Enum`을 활용한 상세한 타입 선언([models.py](src/tossinvest/models.py))으로 IDE의 자동완성 혜택과 정적 분석 검증을 극대화하였습니다.
@@ -22,13 +22,12 @@ tossinvest-core/
 ├── src/
 │   └── tossinvest/
 │       ├── __init__.py # 패키지 진입점 (익스포트 정의)
-│       ├── client.py   # HTTP 세션 관리 및 Transporter 역할의 메인 클라이언트
+│       ├── client.py   # HTTP 세션 관리, OAuth2 토큰 발급/수명주기 및 Transporter 역할의 메인 클라이언트
 │       ├── exceptions.py # 커스텀 예외군 정의
 │       ├── models.py   # 타입힌팅 스키마 (TypedDict & Enum)
 │       └── services/   # 비즈니스 서비스 도메인
 │           ├── __init__.py
 │           ├── base.py # 메인 클라이언트를 참조하는 공통 BaseService
-│           ├── auth.py # 토큰 생명주기 및 /oauth2/token 연동
 │           ├── market.py # 시세, 종목 상세, 환율 및 캘린더 연동
 │           ├── account.py # 계좌 목록 및 보유 자산 조회
 │           └── order.py # 주문 생성/정정/취소 및 매수/매도 가능 정보 조회

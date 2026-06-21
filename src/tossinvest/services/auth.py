@@ -2,6 +2,7 @@ import time
 from typing import Any, Dict, Optional
 
 from tossinvest.exceptions import TossInvestAuthError
+from tossinvest.models import OAuth2TokenResponse
 from tossinvest.services.base import BaseService
 
 
@@ -18,13 +19,13 @@ class AuthService(BaseService):
         self._token: Optional[str] = None
         self._token_expires_at: float = 0.0
 
-    def issue_token(self) -> Dict[str, Any]:
+    def issue_token(self) -> OAuth2TokenResponse:
         """Manually trigger OAuth2 token issuance.
 
         Calls the POST /oauth2/token endpoint and updates cache.
 
         Returns:
-            Dict containing access_token, token_type, expires_in.
+            OAuth2TokenResponse containing access_token, token_type, expires_in.
         """
         url = f"{self.client.base_url}/oauth2/token"
         headers = {
@@ -54,6 +55,7 @@ class AuthService(BaseService):
             expires_in = res_json["expires_in"]
             self._token_expires_at = time.time() + expires_in
 
+            # Construct and return type-conforming dict
             return {
                 "access_token": self._token,
                 "token_type": "Bearer",

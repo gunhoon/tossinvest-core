@@ -1,12 +1,13 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
+from tossinvest.models import Account, HoldingsOverview
 from tossinvest.services.base import BaseService
 
 
 class AccountService(BaseService):
     """Service to access account information and portfolio asset holdings."""
 
-    def get_accounts(self) -> List[Dict[str, Any]]:
+    def get_accounts(self) -> List[Account]:
         """Retrieve the list of registered accounts.
 
         Returns:
@@ -23,7 +24,7 @@ class AccountService(BaseService):
         self,
         account_seq: Optional[int] = None,
         symbol: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> HoldingsOverview:
         """Retrieve current stock holdings for a specific account.
 
         Args:

@@ -1,12 +1,24 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional, Union
 
+from tossinvest.models import (
+    CandlePageResponse,
+    ExchangeRateResponse,
+    KrMarketCalendarResponse,
+    OrderbookResponse,
+    PriceLimitResponse,
+    PriceResponse,
+    StockInfo,
+    StockWarning,
+    Trade,
+    UsMarketCalendarResponse,
+)
 from tossinvest.services.base import BaseService
 
 
 class MarketService(BaseService):
     """Service to access market data, stock master info, exchange rates, and calendars."""
 
-    def get_prices(self, symbols: List[str]) -> List[Dict[str, Any]]:
+    def get_prices(self, symbols: List[str]) -> List[PriceResponse]:
         """Retrieve current prices of stock symbols (up to 200 symbols).
 
         Args:
@@ -21,7 +33,7 @@ class MarketService(BaseService):
             params={"symbols": symbols_str},
         )
 
-    def get_orderbook(self, symbol: str) -> Dict[str, Any]:
+    def get_orderbook(self, symbol: str) -> OrderbookResponse:
         """Retrieve orderbook (bids/asks) and volume for a symbol.
 
         Args:
@@ -40,7 +52,7 @@ class MarketService(BaseService):
         count: Optional[int] = None,
         before: Optional[str] = None,
         adjusted: Optional[bool] = None,
-    ) -> Dict[str, Any]:
+    ) -> CandlePageResponse:
         """Retrieve candle chart data (OHLCV) for a symbol.
 
         Args:
@@ -64,7 +76,7 @@ class MarketService(BaseService):
             params=params,
         )
 
-    def get_price_limits(self, symbol: str) -> Dict[str, Any]:
+    def get_price_limits(self, symbol: str) -> PriceLimitResponse:
         """Retrieve upper/lower price limits for a symbol.
 
         Args:
@@ -76,7 +88,7 @@ class MarketService(BaseService):
             params={"symbol": symbol},
         )
 
-    def get_trades(self, symbol: str, count: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_trades(self, symbol: str, count: Optional[int] = None) -> List[Trade]:
         """Retrieve recent trade/execution history for a symbol.
 
         Args:
@@ -92,7 +104,7 @@ class MarketService(BaseService):
             params=params,
         )
 
-    def get_stocks(self, symbols: List[str]) -> List[Dict[str, Any]]:
+    def get_stocks(self, symbols: List[str]) -> List[StockInfo]:
         """Retrieve master data for stock symbols (up to 200 symbols).
 
         Args:
@@ -107,7 +119,7 @@ class MarketService(BaseService):
             params={"symbols": symbols_str},
         )
 
-    def get_stock_warnings(self, symbol: str) -> List[Dict[str, Any]]:
+    def get_stock_warnings(self, symbol: str) -> List[StockWarning]:
         """Retrieve market warnings / warnings for a stock.
 
         Args:
@@ -123,7 +135,7 @@ class MarketService(BaseService):
         base_currency: str = "USD",
         quote_currency: str = "KRW",
         date_time: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> ExchangeRateResponse:
         """Retrieve KRW/USD exchange rate.
 
         Args:
@@ -143,7 +155,9 @@ class MarketService(BaseService):
             params=params,
         )
 
-    def get_market_calendar(self, country: str, date: Optional[str] = None) -> Dict[str, Any]:
+    def get_market_calendar(
+        self, country: str, date: Optional[str] = None
+    ) -> Union[KrMarketCalendarResponse, UsMarketCalendarResponse]:
         """Retrieve market calendar / operating hours for KR or US.
 
         Args:

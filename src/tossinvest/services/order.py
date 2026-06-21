@@ -1,5 +1,13 @@
-from typing import Any, Dict, Optional
+from typing import List, Optional
 
+from tossinvest.models import (
+    BuyingPowerResponse,
+    Commission,
+    Order,
+    OrderResponse,
+    PaginatedOrderResponse,
+    SellableQuantityResponse,
+)
 from tossinvest.services.base import BaseService
 
 
@@ -18,7 +26,7 @@ class OrderService(BaseService):
         client_order_id: Optional[str] = None,
         confirm_high_value_order: bool = False,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> OrderResponse:
         """Create a new stock order (Buy/Sell, Limit/Market, KR/US).
 
         Args:
@@ -67,7 +75,7 @@ class OrderService(BaseService):
         price: Optional[str] = None,
         confirm_high_value_order: bool = False,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> OrderResponse:
         """Modify an existing pending order (price and/or quantity).
 
         Args:
@@ -101,7 +109,7 @@ class OrderService(BaseService):
         self,
         order_id: str,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> OrderResponse:
         """Cancel an existing pending order.
 
         Args:
@@ -126,7 +134,7 @@ class OrderService(BaseService):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> PaginatedOrderResponse:
         """Retrieve order history.
 
         Args:
@@ -164,7 +172,7 @@ class OrderService(BaseService):
         self,
         order_id: str,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> Order:
         """Retrieve detailed information for a specific order.
 
         Args:
@@ -183,7 +191,7 @@ class OrderService(BaseService):
         self,
         currency: str = "KRW",
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> BuyingPowerResponse:
         """Retrieve buying power (cash available to buy).
 
         Args:
@@ -203,7 +211,7 @@ class OrderService(BaseService):
         self,
         symbol: str,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> SellableQuantityResponse:
         """Retrieve sellable quantity of a symbol.
 
         Args:
@@ -222,7 +230,7 @@ class OrderService(BaseService):
     def get_commissions(
         self,
         account_seq: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[Commission]:
         """Retrieve trading commission rates for KR/US markets.
 
         Args:

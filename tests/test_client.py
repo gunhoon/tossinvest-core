@@ -109,8 +109,9 @@ class TestTossInvestClient(unittest.TestCase):
             self.assertEqual(err.message, "Bad request body")
             self.assertEqual(err.data, {"field": "quantity"})
 
+    @patch("time.sleep")
     @patch.object(TossInvestClient, "_get_valid_token", return_value="mock-token")
-    def test_rate_limit_error_raised(self, mock_token):
+    def test_rate_limit_error_raised(self, mock_token, mock_sleep):
         mock_response = MagicMock()
         mock_response.status_code = 429
         mock_response.headers = {"X-Request-Id": "req-123", "Retry-After": "5"}
@@ -121,12 +122,38 @@ class TestTossInvestClient(unittest.TestCase):
             }
         }
 
-        with patch.object(self.client.session, "request", return_value=mock_response):
+        with patch.object(self.client.session, "request", return_value=mock_response) as mock_req:
             with self.assertRaises(TossInvestRateLimitError) as ctx:
                 self.client._request("GET", "/api/v1/some-endpoint")
             err = ctx.exception
             self.assertEqual(err.status_code, 429)
             self.assertEqual(err.retry_after_seconds, 5)
+            self.assertEqual(mock_req.call_count, 4)
+            self.assertEqual(mock_sleep.call_count, 3)
+            mock_sleep.assert_has_calls([unittest.mock.call(5)] * 3)
+
+    @patch("time.sleep")
+    @patch.object(TossInvestClient, "_get_valid_token", return_value="mock-token")
+    def test_rate_limit_retry_success(self, mock_token, mock_sleep):
+        mock_429 = MagicMock()
+        mock_429.status_code = 429
+        mock_429.headers = {"Retry-After": "3"}
+        mock_429.json.return_value = {
+            "error": {
+                "code": "rate-limit-exceeded",
+                "message": "Too many requests",
+            }
+        }
+
+        mock_200 = MagicMock()
+        mock_200.status_code = 200
+        mock_200.json.return_value = {"result": {"success": True}}
+
+        with patch.object(self.client.session, "request", side_effect=[mock_429, mock_200]) as mock_req:
+            res = self.client._request("GET", "/api/v1/some-endpoint")
+            self.assertEqual(res, {"success": True})
+            self.assertEqual(mock_req.call_count, 2)
+            mock_sleep.assert_called_once_with(3)
 
     @patch.object(TossInvestClient, "_request")
     def test_market_data_endpoints(self, mock_request):

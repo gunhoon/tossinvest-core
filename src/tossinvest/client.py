@@ -25,6 +25,7 @@ class TossInvestClient:
         base_url: str = "https://openapi.tossinvest.com",
         account_seq: Optional[int] = None,
         session: Optional[requests.Session] = None,
+        max_retries: int = 3,
     ) -> None:
         """Initialize the TossInvestClient and its services.
 
@@ -34,12 +35,14 @@ class TossInvestClient:
             base_url: Base URL of the API. Defaults to "https://openapi.tossinvest.com".
             account_seq: Default account sequence number (X-Tossinvest-Account header).
             session: Optional pre-configured requests.Session object.
+            max_retries: Maximum number of retries for 429 rate limit errors. Defaults to 3.
         """
         self.client_id = client_id
         self.client_secret = client_secret
         self.base_url = base_url.rstrip("/")
         self.account_seq = account_seq
         self.session = session or requests.Session()
+        self.max_retries = max_retries
 
         # Token cache state (managed inside client)
         self._token: Optional[str] = None
@@ -114,6 +117,26 @@ class TossInvestClient:
         assert self._token is not None
         return self._token
 
+    def _get_retry_after(self, response: requests.Response) -> Optional[int]:
+        """Extract retry-after seconds from response headers or body."""
+        retry_after = response.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return int(retry_after)
+            except ValueError:
+                pass
+        try:
+            err_json = response.json()
+            err_details = err_json.get("error", {})
+            data = err_details.get("data", {})
+            if isinstance(data, dict):
+                val = data.get("retryAfterSeconds")
+                if val is not None:
+                    return int(val)
+        except Exception:
+            pass
+        return None
+
     def _request(
         self,
         method: str,
@@ -129,10 +152,6 @@ class TossInvestClient:
         url = f"{self.base_url}{path}"
         req_headers = headers.copy() if headers else {}
 
-        if requires_auth:
-            token = self._get_valid_token()
-            req_headers["Authorization"] = f"Bearer {token}"
-
         if requires_account:
             resolved_account_seq = account_seq if account_seq is not None else self.account_seq
             if resolved_account_seq is None:
@@ -142,21 +161,38 @@ class TossInvestClient:
                 )
             req_headers["X-Tossinvest-Account"] = str(resolved_account_seq)
 
-        try:
-            response = self.session.request(
-                method=method,
-                url=url,
-                params=params,
-                json=json,
-                headers=req_headers,
-                timeout=15,
-            )
-        except Exception as e:
-            raise TossInvestError(f"HTTP request failed: {e}") from e
+        response = None
+        for attempt in range(self.max_retries + 1):
+            if requires_auth:
+                token = self._get_valid_token()
+                req_headers["Authorization"] = f"Bearer {token}"
 
-        # Handle HTTP error responses
-        if response.status_code not in (200, 201):
-            self._handle_error_response(response)
+            try:
+                response = self.session.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    json=json,
+                    headers=req_headers,
+                    timeout=15,
+                )
+            except Exception as e:
+                raise TossInvestError(f"HTTP request failed: {e}") from e
+
+            # Handle 429 Rate Limit with Retry-After header/body
+            if response.status_code == 429 and attempt < self.max_retries:
+                retry_after_sec = self._get_retry_after(response) or 1
+                time.sleep(retry_after_sec)
+                continue
+
+            # Handle other HTTP error responses
+            if response.status_code not in (200, 201):
+                self._handle_error_response(response)
+
+            break
+
+        if response is None:
+            raise TossInvestError("Request completed with no response.")
 
         res_json = response.json()
 

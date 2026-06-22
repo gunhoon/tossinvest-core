@@ -227,8 +227,8 @@ class TestTossInvestClient(unittest.TestCase):
 
     @patch.object(TossInvestClient, "_request")
     def test_order_endpoints(self, mock_request):
-        # create
-        self.client.order.create(
+        # create_order
+        self.client.order.create_order(
             symbol="005930",
             side="BUY",
             order_type="LIMIT",
@@ -254,8 +254,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # modify
-        self.client.order.modify(
+        # modify_order
+        self.client.order.modify_order(
             order_id="ord-abc",
             order_type="LIMIT",
             price="71000",
@@ -275,8 +275,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # cancel
-        self.client.order.cancel(order_id="ord-abc")
+        # cancel_order
+        self.client.order.cancel_order(order_id="ord-abc")
         mock_request.assert_called_with(
             method="POST",
             path="/api/v1/orders/ord-abc/cancel",
@@ -286,8 +286,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # list
-        self.client.order.list(status="OPEN", symbol="005930")
+        # get_orders
+        self.client.order.get_orders(status="OPEN", symbol="005930")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/orders",
@@ -297,8 +297,8 @@ class TestTossInvestClient(unittest.TestCase):
             account_seq=None,
         )
 
-        # get
-        self.client.order.get(order_id="ord-abc")
+        # get_order_detail
+        self.client.order.get_order_detail(order_id="ord-abc")
         mock_request.assert_called_with(
             method="GET",
             path="/api/v1/orders/ord-abc",

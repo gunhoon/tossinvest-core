@@ -14,7 +14,9 @@ from tossinvest.services.base import BaseService
 class OrderService(BaseService):
     """주문 생성, 정정, 취소 및 목록/상세 조회, 매매 정보를 처리하는 서비스입니다."""
 
-    def create(
+    # --- Order APIs ---
+
+    def create_order(
         self,
         symbol: str,
         side: str,
@@ -70,7 +72,7 @@ class OrderService(BaseService):
             account_seq=account_seq,
         )
 
-    def modify(
+    def modify_order(
         self,
         order_id: str,
         order_type: str,
@@ -111,7 +113,7 @@ class OrderService(BaseService):
             account_seq=account_seq,
         )
 
-    def cancel(
+    def cancel_order(
         self,
         order_id: str,
         account_seq: Optional[int] = None,
@@ -133,7 +135,9 @@ class OrderService(BaseService):
             account_seq=account_seq,
         )
 
-    def list(
+    # --- Order History APIs ---
+
+    def get_orders(
         self,
         status: str,
         symbol: Optional[str] = None,
@@ -178,7 +182,7 @@ class OrderService(BaseService):
             account_seq=account_seq,
         )
 
-    def get(
+    def get_order_detail(
         self,
         order_id: str,
         account_seq: Optional[int] = None,
@@ -198,6 +202,8 @@ class OrderService(BaseService):
             requires_account=True,
             account_seq=account_seq,
         )
+
+    # --- Order Info APIs ---
 
     def get_buying_power(
         self,

@@ -80,7 +80,7 @@ try:
 
     # 4. 주식 주문 제출 (OrderService)
     # 삼성전자(005930) 60,000원에 1주 지정가(LIMIT) 매수 주문 제출
-    order_res = client.order.create(
+    order_res = client.order.create_order(
         symbol="005930",
         side="BUY",
         order_type="LIMIT",
@@ -92,7 +92,7 @@ try:
     print(f"주문이 완료되었습니다. 주문ID: {order_id}")
 
     # 5. 주문 취소 (OrderService)
-    client.order.cancel(order_id=order_id)
+    client.order.cancel_order(order_id=order_id)
     print("주문이 성공적으로 취소되었습니다.")
 
 except TossInvestAPIError as e:

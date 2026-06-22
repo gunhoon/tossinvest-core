@@ -75,7 +75,7 @@ def run_demo():
         print("\n=== 7. Order Management Flow ===")
         # Creating a quantity-based limit buy order for Samsung Electronics at 60,000 KRW
         print("Placing buy order for Samsung Electronics...")
-        order = client.order.create(
+        order = client.order.create_order(
             symbol="005930",
             side="BUY",
             order_type="LIMIT",
@@ -88,7 +88,7 @@ def run_demo():
 
         # Modify order price to 59,500 KRW
         print(f"Modifying order {order_id}...")
-        mod_order = client.order.modify(
+        mod_order = client.order.modify_order(
             order_id=order_id,
             order_type="LIMIT",
             price="59500",
@@ -98,7 +98,7 @@ def run_demo():
 
         # Cancel the modified order
         print(f"Canceling order {mod_order.get('orderId')}...")
-        cancel_res = client.order.cancel(order_id=mod_order.get("orderId"))
+        cancel_res = client.order.cancel_order(order_id=mod_order.get("orderId"))
         print(f"Order canceled! ID returned: {cancel_res.get('orderId')}")
 
     except TossInvestAuthError as e:

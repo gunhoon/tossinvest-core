@@ -7,6 +7,8 @@ from tossinvest.services.base import BaseService
 class AccountService(BaseService):
     """사용자 계좌 정보 및 보유 주식 자산을 조회하는 서비스입니다."""
 
+    # --- Account & Asset APIs ---
+
     def get_accounts(self) -> List[Account]:
         """계좌 목록 조회 (``GET /api/v1/accounts``)
 

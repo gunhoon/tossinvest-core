@@ -18,6 +18,22 @@ from tossinvest.services.base import BaseService
 class MarketService(BaseService):
     """시세 데이터, 종목 기본 정보, 환율 및 거래소 캘린더 정보를 제공하는 서비스입니다."""
 
+    # --- Market Data APIs ---
+
+    def get_orderbook(self, symbol: str) -> OrderbookResponse:
+        """호가 조회 (``GET /api/v1/orderbook``)
+
+        매수/매도 호가 및 잔량을 조회합니다.
+
+        Args:
+            symbol: 조회할 종목 심볼 (예: '005930' 또는 'AAPL').
+        """
+        return self.client._request(
+            method="GET",
+            path="/api/v1/orderbook",
+            params={"symbol": symbol},
+        )
+
     def get_prices(self, symbols: List[str]) -> List[PriceResponse]:
         """현재가 조회 (``GET /api/v1/prices``)
 
@@ -35,17 +51,35 @@ class MarketService(BaseService):
             params={"symbols": symbols_str},
         )
 
-    def get_orderbook(self, symbol: str) -> OrderbookResponse:
-        """호가 조회 (``GET /api/v1/orderbook``)
+    def get_trades(self, symbol: str, count: Optional[int] = None) -> List[Trade]:
+        """최근 체결 내역 조회 (``GET /api/v1/trades``)
 
-        매수/매도 호가 및 잔량을 조회합니다.
+        당일 최근 체결 내역을 조회합니다.
 
         Args:
-            symbol: 조회할 종목 심볼 (예: '005930' 또는 'AAPL').
+            symbol: 조회할 종목 심볼.
+            count: 조회할 체결 내역 개수 (최대 50개).
+        """
+        params = {"symbol": symbol}
+        if count is not None:
+            params["count"] = count
+        return self.client._request(
+            method="GET",
+            path="/api/v1/trades",
+            params=params,
+        )
+
+    def get_price_limits(self, symbol: str) -> PriceLimitResponse:
+        """상/하한가 조회 (``GET /api/v1/price-limits``)
+
+        종목의 당일 상한가 및 하한가를 조회합니다.
+
+        Args:
+            symbol: 조회할 종목 심볼.
         """
         return self.client._request(
             method="GET",
-            path="/api/v1/orderbook",
+            path="/api/v1/price-limits",
             params={"symbol": symbol},
         )
 
@@ -82,37 +116,7 @@ class MarketService(BaseService):
             params=params,
         )
 
-    def get_price_limits(self, symbol: str) -> PriceLimitResponse:
-        """상/하한가 조회 (``GET /api/v1/price-limits``)
-
-        종목의 당일 상한가 및 하한가를 조회합니다.
-
-        Args:
-            symbol: 조회할 종목 심볼.
-        """
-        return self.client._request(
-            method="GET",
-            path="/api/v1/price-limits",
-            params={"symbol": symbol},
-        )
-
-    def get_trades(self, symbol: str, count: Optional[int] = None) -> List[Trade]:
-        """최근 체결 내역 조회 (``GET /api/v1/trades``)
-
-        당일 최근 체결 내역을 조회합니다.
-
-        Args:
-            symbol: 조회할 종목 심볼.
-            count: 조회할 체결 내역 개수 (최대 50개).
-        """
-        params = {"symbol": symbol}
-        if count is not None:
-            params["count"] = count
-        return self.client._request(
-            method="GET",
-            path="/api/v1/trades",
-            params=params,
-        )
+    # --- Stock Info APIs ---
 
     def get_stocks(self, symbols: List[str]) -> List[StockInfo]:
         """종목 기본 정보 조회 (``GET /api/v1/stocks``)
@@ -144,6 +148,8 @@ class MarketService(BaseService):
             method="GET",
             path=f"/api/v1/stocks/{symbol}/warnings",
         )
+
+    # --- Market Info APIs ---
 
     def get_exchange_rate(
         self,

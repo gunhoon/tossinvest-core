@@ -173,11 +173,7 @@ class TossInvestClient:
 
         res_json = response.json()
 
-        # The oauth2/token endpoint does not wrap its response in standard envelope
-        if path == "/oauth2/token":
-            return res_json
-
-        # All other successful API endpoints wrap payload inside "result" key
+        # All successful API endpoints wrap payload inside "result" key
         if isinstance(res_json, dict) and "result" in res_json:
             return res_json["result"]
 
@@ -202,17 +198,7 @@ class TossInvestClient:
             data = {}
 
         if status_code == 429:
-            # Check Retry-After header or data fields
-            retry_after = response.headers.get("Retry-After")
-            retry_after_sec = None
-            if retry_after:
-                try:
-                    retry_after_sec = int(retry_after)
-                except ValueError:
-                    pass
-            if not retry_after_sec and data:
-                retry_after_sec = data.get("retryAfterSeconds")
-
+            retry_after_sec = self._get_retry_after(response)
             raise TossInvestRateLimitError(
                 request_id=request_id,
                 code=code,

@@ -70,7 +70,7 @@ class TestTossInvestClient(unittest.TestCase):
 
         with patch.object(self.client.session, "post", return_value=mock_response):
             with self.assertRaises(TossInvestAuthError) as ctx:
-                self.client.issue_token()
+                self.client._get_valid_token()
             self.assertIn("Authentication failed", str(ctx.exception))
             self.assertEqual(ctx.exception.response_body, "Invalid credentials")
 

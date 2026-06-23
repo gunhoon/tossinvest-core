@@ -29,10 +29,6 @@ def run_demo():
     print("Client initialized successfully.")
 
     try:
-        # 1.5 Manually fetch token if needed (optional, as client handles this automatically)
-        # token_info = client.issue_token()
-        # print(f"Manual token fetch: {token_info['access_token'][:10]}...")
-
         # 2. Get current stock prices via MarketService
         print("\n=== 2. Fetching Stock Prices ===")
         symbols = ["005930", "AAPL"]  # Samsung Electronics (KRX), Apple (NASDAQ)

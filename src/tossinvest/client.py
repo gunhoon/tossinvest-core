@@ -9,7 +9,6 @@ from tossinvest.exceptions import (
     TossInvestError,
     TossInvestRateLimitError,
 )
-from tossinvest.models import OAuth2TokenResponse
 from tossinvest.services.account import AccountService
 from tossinvest.services.market import MarketService
 from tossinvest.services.order import OrderService
@@ -22,9 +21,7 @@ class TossInvestClient:
         self,
         client_id: str,
         client_secret: str,
-        base_url: str = "https://openapi.tossinvest.com",
         account_seq: Optional[int] = None,
-        session: Optional[requests.Session] = None,
         max_retries: int = 3,
     ) -> None:
         """Initialize the TossInvestClient and its services.
@@ -32,17 +29,16 @@ class TossInvestClient:
         Args:
             client_id: Toss Securities API Client ID.
             client_secret: Toss Securities API Client Secret.
-            base_url: Base URL of the API. Defaults to "https://openapi.tossinvest.com".
             account_seq: Default account sequence number (X-Tossinvest-Account header).
-            session: Optional pre-configured requests.Session object.
             max_retries: Maximum number of retries for 429 rate limit errors. Defaults to 3.
         """
         self.client_id = client_id
         self.client_secret = client_secret
-        self.base_url = base_url.rstrip("/")
         self.account_seq = account_seq
-        self.session = session or requests.Session()
         self.max_retries = max_retries
+
+        self.base_url = "https://openapi.tossinvest.com"
+        self.session = requests.Session()
 
         # Token cache state (managed inside client)
         self._token: Optional[str] = None
@@ -53,14 +49,19 @@ class TossInvestClient:
         self.account = AccountService(self)
         self.order = OrderService(self)
 
-    def issue_token(self) -> OAuth2TokenResponse:
-        """Manually trigger OAuth2 token issuance.
+    def _get_valid_token(self) -> str:
+        """Get a valid access token.
 
-        Calls the POST /oauth2/token endpoint and updates cache.
+        Checks cache and requests a new token if expired.
 
         Returns:
-            OAuth2TokenResponse containing access_token, token_type, expires_in.
+            The active access token string.
         """
+        now = time.time()
+        # Add a 60-second safety buffer before token expiration
+        if self._token and now < self._token_expires_at - 60:
+            return self._token
+
         url = f"{self.base_url}/oauth2/token"
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -86,36 +87,12 @@ class TossInvestClient:
 
             res_json = response.json()
             self._token = res_json["access_token"]
-            expires_in = res_json["expires_in"]
-            self._token_expires_at = time.time() + expires_in
-
-            # Construct and return type-conforming dict
-            return {
-                "access_token": self._token,
-                "token_type": "Bearer",
-                "expires_in": int(max(0, self._token_expires_at - time.time())),
-            }
+            self._token_expires_at = time.time() + res_json["expires_in"]
+            return self._token
         except TossInvestAuthError:
             raise
         except Exception as e:
             raise TossInvestAuthError(f"Failed to request OAuth2 token: {e}") from e
-
-    def _get_valid_token(self) -> str:
-        """Get a valid access token.
-
-        Checks cache and requests a new token if expired.
-
-        Returns:
-            The active access token string.
-        """
-        now = time.time()
-        # Add a 60-second safety buffer before token expiration
-        if self._token and now < self._token_expires_at - 60:
-            return self._token
-
-        self.issue_token()
-        assert self._token is not None
-        return self._token
 
     def _get_retry_after(self, response: requests.Response) -> Optional[int]:
         """Extract retry-after seconds from response headers or body."""
